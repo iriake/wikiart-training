@@ -1,0 +1,32 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# Environments and Virtual Envs
+.venv/
+venv/
+env/
+ENV/
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*.suo
+
+# Antigravity & local tooling configs
+.antigravitycli/
+scratch/
+
+# Large model binaries / outputs
+*.pkl
+*.joblib
+*.pth
+*.pt
+*.h5
