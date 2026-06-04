@@ -6,3 +6,8 @@ scikit-learn
 Pillow
 pypdf
 ipykernel
+imbalanced-learn
+tqdm
+scipy
+torch
+torchvision
