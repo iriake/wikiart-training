@@ -30,3 +30,7 @@ scratch/
 *.pth
 *.pt
 *.h5
+
+# Images
+images/
+
