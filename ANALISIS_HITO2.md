@@ -39,7 +39,7 @@ El dataset presenta un **ratio de desbalance de 5.1×** entre la clase mayoritar
 
 ### Resultados del Baseline (Sin Balancear)
 * **Accuracy:** 0.24
-* **F1 Macro:** 0.13
+* **F1 Macro:** 0.138 (redondeado en el notebook a 0.13)
 * **F1 Weighted:** 0.18
 
 ### Análisis de Colapso de Clases (Baseline)
@@ -60,7 +60,7 @@ Se compararon tres técnicas de balanceo sobre el mismo conjunto de test desbala
 
 | Modelo | Accuracy | F1 Macro | F1 Weighted |
 | :--- | :---: | :---: | :---: |
-| **Baseline (Sin balancear)** | **0.24** | 0.13 | 0.18 |
+| **Baseline (Sin balancear)** | **0.24** | 0.138 | 0.18 |
 | Class Weighting (`class_weight='balanced'`) | 0.15 | 0.15 | 0.15 |
 | **Undersampling Manual** (a la mediana) | 0.23 | **0.20** | **0.22** |
 | Balanced Random Forest (`imblearn`) | 0.15 | 0.15 | 0.15 |
@@ -68,7 +68,7 @@ Se compararon tres técnicas de balanceo sobre el mismo conjunto de test desbala
 ### Hallazgos Clave
 
 * **El undersampling manual a la mediana fue la mejor técnica.**
-  Mejora simultáneamente el F1-macro (0.13 → 0.20) y F1-weighted (0.18 → 0.22) sin destruir el accuracy global (0.24 → 0.23). Al recortar las clases mayoritarias hasta la mediana (4,524 muestras) en lugar del mínimo, preserva un conjunto de datos grande (45,148 muestras) reduciendo la pérdida de información.
+  Mejora simultáneamente el F1-macro (0.138 → 0.20) y F1-weighted (0.18 → 0.22) sin destruir el accuracy global (0.24 → 0.23). Al recortar las clases mayoritarias hasta la mediana (4,524 muestras) en lugar del mínimo, preserva un conjunto de datos grande (45,148 muestras) reduciendo la pérdida de información.
 * **Class Weighting y Balanced Random Forest convergen al mismo límite.**
   Ambas técnicas reportan métricas idénticas (F1-macro 0.15 / Accuracy 0.15). En un espacio de características geométricas sin poder discriminativo real, modificar los pesos de las clases a nivel de impureza (`class_weight`) o a nivel de bootstrap (`BalancedRF`) solo consigue que el modelo arriesgue predicciones hacia las minoritarias sin una base real, aumentando su recall pero colapsando su precisión.
 
@@ -94,17 +94,28 @@ Se compararon tres técnicas de balanceo sobre el mismo conjunto de test desbala
 * **Dimensión de Embeddings:** 512
 * **Tamaño del Muestreo:** `N_SAMPLES = 2974`
 
+### Resultados de la Extracción Real (CPU)
+* **Tiempo de Extracción:** ~3 minutos y 18 segundos (a un promedio de 2.14s/it).
+* **Sweep de K para Clustering (K=2 a 8):**
+  * K=2: 0.092
+  * K=3: 0.089
+  * **K=4: 0.079** (usado para consistencia con Hito 1)
+  * K=5: 0.082
+  * K=6: 0.067
+  * K=7: 0.066
+  * K=8: 0.065
+
 ### Comparación Cuantitativa de Clustering (Hito 1 vs Hito 2)
 
-El clustering se evaluó mediante el coeficiente Silhouette (K=4 clusters en ambos casos):
+El clustering se evaluó mediante el coeficiente Silhouette:
 
 | Experimento | Características de Entrada | Coeficiente Silhouette | Interpretación / Significado |
 | :--- | :--- | :---: | :--- |
-| **Hito 1** | Features Manuales Geométricas | **0.751** | **Espejismo Metodológico**: Agrupa lienzos basados en dimensiones físicas (retrato vs. paisaje). Alta separación matemática, pero nula relevancia artística. |
+| **Hito 1** | Features Manuales Geométricas | **0.752** | **Espejismo Metodológico**: Agrupa lienzos basados en dimensiones físicas (retrato vs. paisaje). Alta separación matemática, pero nula relevancia artística. |
 | **Hito 2** | Embeddings Visuales ResNet-18 | **0.079** | **Resultado Real**: Agrupa según información semántica e visual real. El score bajo refleja que los estilos pictóricos forman un continuo visual superpuesto. |
 
 > [!NOTE]
-> Aunque numéricamente 0.079 es inferior a 0.751, representa un **salto metodológico correcto**: los movimientos artísticos (ej. Impresionismo y Postimpresionismo) no se dividen en clusters matemáticamente densos y aislados, sino que comparten patrones, paletas y técnicas comunes.
+> Aunque numéricamente 0.079 es inferior a 0.752, representa un **salto metodológico correcto**: los movimientos artísticos (ej. Impresionismo y Postimpresionismo) no se dividen en clusters matemáticamente densos y aislados, sino que comparten patrones, paletas y técnicas comunes. El sweep de K muestra que el Silhouette score es bajo pero estable en el rango 0.07–0.09 para K=2..5, validando que el espacio visual continuo de arte tiene alta complejidad.
 
 ---
 
@@ -121,19 +132,48 @@ El clustering se evaluó mediante el coeficiente Silhouette (K=4 clusters en amb
 
 ---
 
-## 🚀 7. Plan de Trabajo Futuro: Hito 2 a Hito 3
+## 🖼️ 7. Q1: Clasificación de Estilo usando Embeddings de ResNet-18
 
-Una vez que el notebook funciona de extremo a extremo con imágenes reales, el grupo se encuentra en una excelente posición para desarrollar las siguientes extensiones del proyecto:
+Para responder a la pregunta de clasificación del estilo artístico (Q1) utilizando deep learning, se entrenaron clasificadores supervisados sobre la muestra de 2,974 embeddings extraídos (split 80/20 train/test).
 
-### 1. Clasificación usando Embeddings Visuales (Hito 3)
-* **Problema actual:** Los clasificadores de la Sección 2 y 3 usan variables geométricas con un tope de rendimiento del 24% de accuracy.
-* **Mejora:** Entrenar un Random Forest, una Regresión Logística o una SVM usando los **embeddings de 512 dimensiones extraídos por ResNet-18** en lugar de las features geométricas. Esto debería disparar las métricas de clasificación, pues el modelo tendrá acceso a información visual genuina.
+### Comparación de Clasificación (Hito 1 vs. Hito 2)
 
-### 2. Fine-Tuning de ResNet-18 (Hito 3)
-* **Problema actual:** Los embeddings provienen de un extractor entrenado en ImageNet (fotos del mundo real).
-* **Mejora:** Descongelar las últimas capas convolucionales de ResNet-18 y entrenar la red directamente sobre el dataset de WikiArt para clasificar géneros artísticos. Esto forzará al modelo a aprender características pictóricas específicas (pinceladas, trazos, paletas de colores).
-* **Impacto en Grad-CAM:** Los mapas de calor de Grad-CAM se volverán mucho más interesantes e interpretables, resaltando las texturas y pinceladas que definen cada movimiento en lugar de objetos genéricos.
+| Clasificador | Características de Entrada | F1-Score Macro | Accuracy | Observación |
+| :--- | :--- | :---: | :---: | :--- |
+| **Random Forest Baseline** | Features Geométricas (Tabulares) | **0.138** | 0.24 | Colapso a clases mayoritarias por falta de señal. |
+| **Random Forest Hito 1** | Features Visuales Manuales | **0.236** | — | Muestra de 3k. Features de color/bordes tradicionales. |
+| **Random Forest Hito 2** | Embeddings ResNet-18 (512-d) | **0.30** | 0.36 | Mejora significativa con descriptores profundos. |
+| **Regresión Logística Hito 2** | Embeddings ResNet-18 (512-d) | **0.35** | 0.35 | **Mejor modelo**. Excelente rendimiento sobre espacio de alta dimensión. |
 
-### 3. Ajuste de Umbrales Multietiqueta
-* **Problema actual:** El umbral por defecto (0.5) colapsa la clasificación multietiqueta.
-* **Mejora:** Utilizar `predict_proba` y buscar un umbral optimizado por clase (ej. el cuantil de probabilidad en la partición de validación) para recuperar el recall de clases minoritarias en el esquema multietiqueta.
+> [!TIP]
+> **Conclusión Clave:** Al pasar de características geométricas a descriptores profundos (ResNet-18), el F1-Score macro subió de **0.138 a 0.35 (+21.2%)** y superó por **+11.4%** al mejor clasificador del Hito 1 con características visuales manuales. Esto demuestra de forma cuantitativa el enorme poder de representación de las características semánticas profundas para discriminar estilos artísticos.
+
+---
+
+## 📅 8. Q3: Regresión del Año de Creación usando Embeddings
+
+Se recuperó el análisis de regresión del año de creación de la obra (Q3), utilizando la columna `description` para extraer el año de creación (1,712 obras con año válido en la muestra de 2,974). Se entrenaron regresores sobre los embeddings de 512 dimensiones (split 80/20).
+
+### Comparación Cuantitativa de MAE (Error Absoluto Medio)
+
+| Regresor | Características de Entrada | MAE (Error Medio) | Reducción de Error |
+| :--- | :--- | :---: | :---: |
+| **Random Forest Baseline (Hito 1)** | Features Geométricas (Tabulares) | **81.4 años** | Baseline |
+| **Ridge Regressor (Hito 2)** | Embeddings ResNet-18 (512-d) | **74.22 años** | -7.18 años |
+| **Random Forest Regressor (Hito 2)** | Embeddings ResNet-18 (512-d) | **55.88 años** | **-25.52 años** |
+
+> [!TIP]
+> **Conclusión Clave:** Utilizar embeddings visuales de aprendizaje profundo redujo el error absoluto medio (MAE) de predicción de año de **81.4 años a solo 55.88 años** (un recorte masivo de más de 25 años de error). Esto evidencia que la evolución temporal de los estilos artísticos (trazos, paletas de colores, composición histórica) queda codificada de forma cuantitativa en el espacio latente de la ResNet-18.
+
+---
+
+## 🚀 9. Plan de Trabajo Futuro: Hito 2 a Hito 3
+
+Con la validación cuantitativa completa, las líneas de desarrollo para el Hito 3 quedan firmemente estructuradas:
+
+1. **Fine-Tuning de ResNet-18:**
+   Entrenar la red convolucional de extremo a extremo directamente sobre WikiArt para clasificar géneros artísticos. Esto adaptará los filtros convolucionales a pinceladas y texturas artísticas.
+2. **Impacto en Grad-CAM:**
+   El fine-tuning permitirá que los heatmaps resalten los trazos, espátulas e iluminaciones específicos que definen cada estilo (ej. pinceladas cortas impresionistas) en lugar de contornos de objetos generales.
+3. **Optimización Multietiqueta con Embeddings:**
+   Extender el clasificador multilabel utilizando los embeddings visuales combinados con la calibración del umbral probabilístico por clase, superando el colapso del baseline geométrico.
