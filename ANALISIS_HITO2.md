@@ -94,8 +94,9 @@ Se compararon tres técnicas de balanceo sobre el mismo conjunto de test desbala
 * **Dimensión de Embeddings:** 512
 * **Tamaño del Muestreo:** `N_SAMPLES = 2974`
 
-### Resultados de la Extracción Real (CPU)
-* **Tiempo de Extracción:** ~3 minutos y 18 segundos (a un promedio de 2.14s/it).
+### Resultados de la Extracción Real (GPU / CUDA)
+* **Hardware Utilizado:** NVIDIA GeForce GTX 1050 Ti (CUDA 12.6).
+* **Tiempo de Extracción:** ~2 minutos (a un promedio de 1.31s/it).
 * **Sweep de K para Clustering (K=2 a 8):**
   * K=2: 0.092
   * K=3: 0.089
@@ -163,7 +164,7 @@ Se recuperó el análisis de regresión del año de creación de la obra (Q3), u
 | **Random Forest Regressor (Hito 2)** | Embeddings ResNet-18 (512-d) | **55.88 años** | **-25.52 años** |
 
 > [!TIP]
-> **Conclusión Clave:** Utilizar embeddings visuales de aprendizaje profundo redujo el error absoluto medio (MAE) de predicción de año de **81.4 años a solo 55.88 años** (un recorte masivo de más de 25 años de error). Esto evidencia que la evolución temporal de los estilos artísticos (trazos, paletas de colores, composición histórica) queda codificada de forma cuantitativa en el espacio latente de la ResNet-18.
+> **Conclusión Clave:** Utilizar embeddings visuales de aprendizaje profundo redujo el error absoluto medio (MAE) de predicción de año de **81.4 años a solo 55.88 años** (un recorte masivo de más de 25 años de error). Esto evidencia que la evolución temporal de los estilos artísticos (trazos, paletas de colores, composition histórica) queda codificada de forma cuantitativa en el espacio latente de la ResNet-18.
 
 ---
 
