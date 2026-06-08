@@ -13,7 +13,7 @@ A continuación se detalla la estructura actual del repositorio tras la consolid
 | :--- | :--- |
 | [wikiart_hito1.ipynb](file:///C:/Users/ko5/Documents/Proyectos/wikiart-training/hito1/wikiart_hito1.ipynb) | Notebook del Hito 1 (EDA + modelos baseline tabulares). |
 | [wikiart_hito2.ipynb](file:///C:/Users/ko5/Documents/Proyectos/wikiart-training/wikiart_hito2.ipynb) | Notebook unificado del Hito 2 (balanceo de clases, multilabel, ResNet, clustering, Grad-CAM). |
-| [requirements.txt](file:///C:/Users/ko5/Documents/Proyectos/wikiart-training/requirements.txt) | Dependencias actualizadas del proyecto (incluye `opencv-python` e `imbalanced-learn`). |
+| [requirements.txt](file:///C:/Users/ko5/Documents/Proyectos/wikiart-training/requirements.txt) | Dependencias del proyecto (incluye `opencv-python` e `imbalanced-learn`). |
 | [CSVs/](file:///C:/Users/ko5/Documents/Proyectos/wikiart-training/CSVs) | Archivos de metadatos y características geométricas (`classes.csv`, `visual_features.csv`, `wclasses.csv`). |
 | [images/](file:///C:/Users/ko5/Documents/Proyectos/wikiart-training/images) | Directorio con las **81,444 imágenes reales** clasificadas por género (excluido de Git mediante `.gitignore`). |
 
@@ -91,35 +91,39 @@ Se compararon tres técnicas de balanceo sobre el mismo conjunto de test desbala
 * **Dimensión de Embeddings:** 512
 * **Tamaño del Muestreo:** `N_SAMPLES = 2974`
 
-> [!CAUTION]
-> **Nota de la versión anterior (Simulada):**
-> En ejecuciones previas del notebook, el Silhouette score reportaba **0.965**. Esto era un **artefacto numérico falso** causado porque el directorio `./images/` estaba vacío y el dataset sustituía silenciosamente los archivos faltantes por imágenes negras constantes. Esto forzaba a la ResNet a generar el mismo vector de embeddings y agrupaba ruido infinitesimal.
+### Resultados de la Extracción Real (CPU)
+* **Tiempo de Extracción:** ~3 minutos y 40 segundos (a un promedio de 2.38s/it).
+* **Coeficiente Silhouette obtenido:** **0.079** (K=4 clusters tras reducción PCA a 50 componentes).
 
-### Estado Actual:
-* Las imágenes ya han sido **totalmente descargadas** en `./images/`.
-* La infraestructura está lista para extraer embeddings visuales reales sobre GPU usando el notebook [wikiart_hito2.ipynb](file:///C:/Users/ko5/Documents/Proyectos/wikiart-training/wikiart_hito2.ipynb). Se espera que la métrica de Silhouette real se ubique en el rango típico de 0.1–0.4 una vez ejecutado en un hardware adecuado.
+> [!NOTE]
+> **Análisis del Coeficiente Silhouette (0.079 vs 0.751 del Hito 1):**
+> En el Hito 1, el clustering sobre features manuales obtuvo un Silhouette score de **0.751**. Sin embargo, esto era un **espejismo**: las features eran geométricas y estructuraban los datos en grupos densos basados en la orientación física del lienzo (ej. retrato vs vertical vs cuadrado).
+>
+> En el Hito 2, al usar embeddings de ResNet-18, agrupamos por características **visuales y semánticas reales** de la pintura. El coeficiente **0.079** es bajo pero biológicamente y artísticamente correcto: los estilos pictóricos no están aislados en cajas compactas, sino que forman un continuo estilístico con alta superposición en el espacio visual latente.
 
 ---
 
 ## 🔍 6. Interpretabilidad Visual con Grad-CAM
 
 * **Capa objetivo:** `resnet.layer4[-1]` (último bloque convolucional).
-* **Estado:** Se ha corregido la dependencia faltante instalando `opencv-python` (OpenCV) y registrando los hooks correspondientes. El pipeline generará mapas de calor reales una vez que el notebook se ejecute con las imágenes cargadas.
+* **Resultado:** Se ha generado el mapa de calor exitosamente sobre una obra real del DataLoader.
+* **Análisis cualitativo:** Al usar una ResNet-18 preentrenada en ImageNet, las activaciones se centran en formas geométricas y contornos de objetos generales (ej. bordes de objetos prominentes) más que en características estilísticas específicas (como pinceladas o texturas de óleo). 
 
 ---
 
-## 🚀 7. Estado del Proyecto y Próximos Pasos
+## 🚀 7. Plan de Trabajo Futuro: Hito 2 a Hito 3
 
-> [!NOTE]
-> **Resumen de Estado:** El notebook unificado de Hito 2 está completamente corregido, las dependencias de OpenCV están resueltas en el entorno y las imágenes han sido totalmente descargadas. La limitación actual es que la máquina local no cuenta con suficiente potencia gráfica para completar el proceso de inferencia de ResNet-18 y el cálculo de matrices de confusión.
+Una vez que el notebook funciona de extremo a extremo con imágenes reales, el grupo se encuentra en una excelente posición para desarrollar las siguientes extensiones del proyecto:
 
-### Acciones Completadas
-1. **Unificación de Notebooks**: Integración de todo el flujo y la técnica 3 de balanceo en [wikiart_hito2.ipynb](file:///C:/Users/ko5/Documents/Proyectos/wikiart-training/wikiart_hito2.ipynb).
-2. **Descarga de Datos**: 81,444 imágenes reales preparadas localmente.
-3. **Instalación de Dependencias**: Agregado `opencv-python` en [requirements.txt](file:///C:/Users/ko5/Documents/Proyectos/wikiart-training/requirements.txt) e instalado en el sistema.
+### 1. Clasificación usando Embeddings Visuales (Hito 3)
+* **Problema actual:** Los clasificadores de la Sección 2 y 3 usan variables geométricas con un tope de rendimiento del 24% de accuracy.
+* **Mejora:** Entrenar un Random Forest, una Regresión Logística o una SVM usando los **embeddings de 512 dimensiones extraídos por ResNet-18** en lugar de las features geométricas. Esto debería disparar las métricas de clasificación, pues el modelo tendrá acceso a información visual genuina.
 
-### Próximos Pasos (Para ejecutar en la máquina del compañero)
-1. **Ejecución Completa**: Correr todas las celdas del notebook para actualizar los outputs y gráficos con imágenes reales.
-2. **Registro de Silhouette Real**: Anotar el coeficiente de Silhouette real del clustering sobre embeddings de imágenes reales.
-3. **Análisis Cualitativo**: Inspeccionar y exportar los heatmaps de Grad-CAM generados sobre obras reales para identificar qué patrones (formas, colores) guían la clasificación de estilos.
-4. **Preparación del Reporte**: Redactar el informe escrito (máximo 15 páginas) y preparar la presentación de diapositivas basándose en los resultados reales obtenidos.
+### 2. Fine-Tuning de ResNet-18 (Hito 3)
+* **Problema actual:** Los embeddings provienen de un extractor entrenado en ImageNet (fotos del mundo real).
+* **Mejora:** Descongelar las últimas capas convolucionales de ResNet-18 y entrenar la red directamente sobre el dataset de WikiArt para clasificar géneros artísticos. Esto forzará al modelo a aprender características pictóricas específicas (pinceladas, trazos, paletas de colores).
+* **Impacto en Grad-CAM:** Los mapas de calor de Grad-CAM se volverán mucho más interesantes e interpretables, resaltando las texturas y pinceladas que definen cada movimiento en lugar de objetos genéricos.
+
+### 3. Ajuste de Umbrales Multietiqueta
+* **Problema actual:** El umbral por defecto (0.5) colapsa la clasificación multietiqueta.
+* **Mejora:** Utilizar `predict_proba` y buscar un umbral optimizado por clase (ej. el cuantil de probabilidad en la partición de validación) para recuperar el recall de clases minoritarias en el esquema multietiqueta.
