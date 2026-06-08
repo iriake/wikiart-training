@@ -80,7 +80,10 @@ Se compararon tres técnicas de balanceo sobre el mismo conjunto de test desbala
 * **Métricas macro/micro/weighted F1:** **0.01**
 
 > [!WARNING]
-> El clasificador devuelve casi siempre predicciones negativas en todas las clases. Las features geométricas y el umbral por defecto de 0.5 impiden que clases de muy baja prevalencia superen la probabilidad crítica de asignación. Para el Hito 3, será clave evaluar con métricas de probabilidad (`average_precision_score`) o calibrar umbrales por clase en lugar del 0.5 genérico.
+> **Nota Metodológica sobre Features Tabulares:**
+> Al igual que en la clasificación multiclase del baseline, la clasificación multietiqueta en esta sección utiliza las características tabulares geométricas del lienzo (como `aspect_ratio` y dimensiones). Dado que estas variables carecen de información visual sobre el estilo artístico de las obras, se espera por diseño que el rendimiento (F1-score) sea sumamente bajo.
+> 
+> El clasificador devuelve casi siempre predicciones negativas en todas las clases. El objetivo primordial de esta sección es **implementar y validar la infraestructura del pipeline multietiqueta** (Binarización de etiquetas múltiples, clasificador One-Vs-Rest y matrices de confusión multietiqueta), sirviendo como base estructural para futuros experimentos con características visuales profundas en el Hito 3.
 
 ---
 
@@ -91,15 +94,17 @@ Se compararon tres técnicas de balanceo sobre el mismo conjunto de test desbala
 * **Dimensión de Embeddings:** 512
 * **Tamaño del Muestreo:** `N_SAMPLES = 2974`
 
-### Resultados de la Extracción Real (CPU)
-* **Tiempo de Extracción:** ~3 minutos y 40 segundos (a un promedio de 2.38s/it).
-* **Coeficiente Silhouette obtenido:** **0.079** (K=4 clusters tras reducción PCA a 50 componentes).
+### Comparación Cuantitativa de Clustering (Hito 1 vs Hito 2)
+
+El clustering se evaluó mediante el coeficiente Silhouette (K=4 clusters en ambos casos):
+
+| Experimento | Características de Entrada | Coeficiente Silhouette | Interpretación / Significado |
+| :--- | :--- | :---: | :--- |
+| **Hito 1** | Features Manuales Geométricas | **0.751** | **Espejismo Metodológico**: Agrupa lienzos basados en dimensiones físicas (retrato vs. paisaje). Alta separación matemática, pero nula relevancia artística. |
+| **Hito 2** | Embeddings Visuales ResNet-18 | **0.079** | **Resultado Real**: Agrupa según información semántica e visual real. El score bajo refleja que los estilos pictóricos forman un continuo visual superpuesto. |
 
 > [!NOTE]
-> **Análisis del Coeficiente Silhouette (0.079 vs 0.751 del Hito 1):**
-> En el Hito 1, el clustering sobre features manuales obtuvo un Silhouette score de **0.751**. Sin embargo, esto era un **espejismo**: las features eran geométricas y estructuraban los datos en grupos densos basados en la orientación física del lienzo (ej. retrato vs vertical vs cuadrado).
->
-> En el Hito 2, al usar embeddings de ResNet-18, agrupamos por características **visuales y semánticas reales** de la pintura. El coeficiente **0.079** es bajo pero biológicamente y artísticamente correcto: los estilos pictóricos no están aislados en cajas compactas, sino que forman un continuo estilístico con alta superposición en el espacio visual latente.
+> Aunque numéricamente 0.079 es inferior a 0.751, representa un **salto metodológico correcto**: los movimientos artísticos (ej. Impresionismo y Postimpresionismo) no se dividen en clusters matemáticamente densos y aislados, sino que comparten patrones, paletas y técnicas comunes.
 
 ---
 
@@ -107,7 +112,12 @@ Se compararon tres técnicas de balanceo sobre el mismo conjunto de test desbala
 
 * **Capa objetivo:** `resnet.layer4[-1]` (último bloque convolucional).
 * **Resultado:** Se ha generado el mapa de calor exitosamente sobre una obra real del DataLoader.
-* **Análisis cualitativo:** Al usar una ResNet-18 preentrenada en ImageNet, las activaciones se centran en formas geométricas y contornos de objetos generales (ej. bordes de objetos prominentes) más que en características estilísticas específicas (como pinceladas o texturas de óleo). 
+
+> [!CAUTION]
+> **Advertencia de Interpretabilidad (Modelo sin Fine-Tuning):**
+> Es importante destacar que estamos utilizando una red ResNet-18 preentrenada en ImageNet (un dataset de fotografía general) **sin realizar fine-tuning sobre WikiArt**. Por lo tanto, los mapas de calor generados por Grad-CAM muestran qué características visuales generales (bordes, contrastes, formas básicas) capturan la atención de un extractor de características de propósito general.
+> 
+> No deben interpretarse como "trazos o estilos artísticos aprendidos", sino como el comportamiento del modelo baseline preentrenado. Esto sienta las bases para el Hito 3, donde el fine-tuning de la red sobre arte permitirá que Grad-CAM resalte elementos estilísticos específicos (como la textura de pinceladas o parches de color).
 
 ---
 
