@@ -13,7 +13,7 @@ A continuación se detalla la estructura del repositorio tras la ejecución del 
 | :--- | :--- |
 | [wikiart_hito1.ipynb](file:///C:/Users/ko5/Documents/Proyectos/wikiart-training/hito1/wikiart_hito1.ipynb) | Notebook del Hito 1 (EDA + modelos baseline tabulares). |
 | [wikiart_hito2.ipynb](file:///C:/Users/ko5/Documents/Proyectos/wikiart-training/wikiart_hito2.ipynb) | Notebook unificado del Hito 2 (balanceo de clases, multilabel, ResNet, clustering, Grad-CAM, clasificación y regresión sobre embeddings). |
-| [requirements.txt](file:///C:/Users/ko5/Documents/Proyectos/wikiart-training/requirements.txt) | Dependencias actualizadas del proyecto (incluye `opencv-python` e `imbalanced-learn`). |
+| [requirements.txt](file:///C:/Users/ko5/Documents/Proyectos/wikiart-training/requirements.txt) | Dependencias del proyecto (incluye `opencv-python` e `imbalanced-learn`). |
 | [CSVs/](file:///C:/Users/ko5/Documents/Proyectos/wikiart-training/CSVs) | Archivos de metadatos y características geométricas (`classes.csv`, `visual_features.csv`, `wclasses.csv`). |
 | [images/](file:///C:/Users/ko5/Documents/Proyectos/wikiart-training/images) | Directorio con las **81,444 imágenes reales** clasificadas por género (excluido de Git mediante `.gitignore`). |
 
@@ -77,13 +77,22 @@ Se compararon tres técnicas de balanceo sobre el mismo conjunto de test desbala
 ## 🏷️ 4. Clasificación Multietiqueta (Multilabel)
 
 * **Estrategia:** OneVsRest + Random Forest (50 árboles, profundidad 10) sobre 27 clases binarias obtenidas de `genre_list`.
-* **Métricas macro/micro/weighted F1:** **0.01**
+
+### Calibración de Umbrales Multietiqueta
+
+Debido a que las características geométricas son débiles, el umbral de decisión por defecto de **0.5** colapsa las predicciones del modelo (Micro F1: **0.0063**), ya que para casi ningún cuadro la probabilidad estimada supera el 50%. 
+
+Para mitigar esto, se implementó la extracción de probabilidades con `predict_proba` y se calibró un umbral más bajo (**0.15**), arrojando los siguientes resultados comparativos:
+
+| Umbral de Decisión | Micro F1-Score | Macro F1-Score | Observación / Comportamiento |
+| :---: | :---: | :---: | :--- |
+| **0.50 (Default)** | **0.0063** | **0.0065** | Colapso total. Casi ninguna predicción positiva. |
+| **0.20** | **0.1434** | **0.0453** | Empiezan a activarse predicciones en clases frecuentes. |
+| **0.15 (Elegido)** | **0.2001** | **0.0677** | **Mejor balance de compromiso**. Se recupera el recall general. |
+| **0.10** | **0.2150** | **0.0904** | Aumenta la tasa de falsos positivos masivamente. |
 
 > [!WARNING]
-> **Nota Metodológica sobre Features Tabulares:**
-> Al igual que en la clasificación multiclase del baseline, la clasificación multietiqueta en esta sección utiliza las características tabulares geométricas del lienzo (como `aspect_ratio` y dimensiones). Dado que estas variables carecen de información visual sobre el estilo artístico de las obras, se espera por diseño que el rendimiento (F1-score) sea sumamente bajo.
-> 
-> El clasificador devuelve casi siempre predicciones negativas en todas las clases. El objetivo primordial de esta sección es **implementar y validar la infraestructura del pipeline multietiqueta** (Binarización de etiquetas múltiples, clasificador One-Vs-Rest y matrices de confusión multietiqueta), sirviendo como base estructural para futuros experimentos con características visuales profundas en el Hito 3.
+> **Nota Metodológica:** A pesar de la sustancial mejora lograda al calibrar el umbral a **0.15** (Micro F1 sube de 0.006 a 0.20), el rendimiento absoluto sigue siendo bajo debido a que el espacio de características es puramente geométrico. La verdadera solución para este pipeline se abordará en el Hito 3 entrenando el modelo multilabel sobre los embeddings de ResNet-18.
 
 ---
 
