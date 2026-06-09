@@ -7,13 +7,13 @@
 
 ## 📁 1. Estructura del Repositorio
 
-A continuación se detalla la estructura actual del repositorio tras la consolidación de cambios:
+A continuación se detalla la estructura del repositorio tras la ejecución del notebook y consolidación de archivos:
 
 | Archivo / Directorio | Descripción |
 | :--- | :--- |
 | [wikiart_hito1.ipynb](file:///C:/Users/ko5/Documents/Proyectos/wikiart-training/hito1/wikiart_hito1.ipynb) | Notebook del Hito 1 (EDA + modelos baseline tabulares). |
-| [wikiart_hito2.ipynb](file:///C:/Users/ko5/Documents/Proyectos/wikiart-training/wikiart_hito2.ipynb) | Notebook unificado del Hito 2 (balanceo de clases, multilabel, ResNet, clustering, Grad-CAM). |
-| [requirements.txt](file:///C:/Users/ko5/Documents/Proyectos/wikiart-training/requirements.txt) | Dependencias del proyecto (incluye `opencv-python` e `imbalanced-learn`). |
+| [wikiart_hito2.ipynb](file:///C:/Users/ko5/Documents/Proyectos/wikiart-training/wikiart_hito2.ipynb) | Notebook unificado del Hito 2 (balanceo de clases, multilabel, ResNet, clustering, Grad-CAM, clasificación y regresión sobre embeddings). |
+| [requirements.txt](file:///C:/Users/ko5/Documents/Proyectos/wikiart-training/requirements.txt) | Dependencias actualizadas del proyecto (incluye `opencv-python` e `imbalanced-learn`). |
 | [CSVs/](file:///C:/Users/ko5/Documents/Proyectos/wikiart-training/CSVs) | Archivos de metadatos y características geométricas (`classes.csv`, `visual_features.csv`, `wclasses.csv`). |
 | [images/](file:///C:/Users/ko5/Documents/Proyectos/wikiart-training/images) | Directorio con las **81,444 imágenes reales** clasificadas por género (excluido de Git mediante `.gitignore`). |
 
@@ -92,19 +92,19 @@ Se compararon tres técnicas de balanceo sobre el mismo conjunto de test desbala
 ### Configuración del Pipeline
 * **Modelo:** ResNet-18 preentrenada en ImageNet sin fine-tuning (usada como extractor de características).
 * **Dimensión de Embeddings:** 512
-* **Tamaño del Muestreo:** `N_SAMPLES = 2974`
+* **Tamaño del Muestreo:** **`N_SAMPLES = 10000`** (escala de 10k+ para cumplir con la propuesta del Hito 1).
 
 ### Resultados de la Extracción Real (GPU / CUDA)
 * **Hardware Utilizado:** NVIDIA GeForce GTX 1050 Ti (CUDA 12.6).
-* **Tiempo de Extracción:** ~2 minutos (a un promedio de 1.31s/it).
+* **Tiempo de Extracción:** ~7 minutos y 46 segundos (a un promedio de 1.49s/it para las 10,000 imágenes).
 * **Sweep de K para Clustering (K=2 a 8):**
-  * K=2: 0.092
+  * K=2: 0.091
   * K=3: 0.089
   * **K=4: 0.079** (usado para consistencia con Hito 1)
-  * K=5: 0.082
+  * K=5: 0.079
   * K=6: 0.067
-  * K=7: 0.066
-  * K=8: 0.065
+  * K=7: 0.074
+  * K=8: 0.075
 
 ### Comparación Cuantitativa de Clustering (Hito 1 vs Hito 2)
 
@@ -123,7 +123,7 @@ El clustering se evaluó mediante el coeficiente Silhouette:
 ## 🔍 6. Interpretabilidad Visual con Grad-CAM
 
 * **Capa objetivo:** `resnet.layer4[-1]` (último bloque convolucional).
-* **Resultado:** Se ha generado el mapa de calor exitosamente sobre una obra real del DataLoader.
+* **Resultado:** Se ha generado el mapa de calor exitosamente sobre una obra real del DataLoader sin ninguna advertencia en consolas gracias a la corrección de hooks (`register_full_backward_hook`).
 
 > [!CAUTION]
 > **Advertencia de Interpretabilidad (Modelo sin Fine-Tuning):**
@@ -135,7 +135,7 @@ El clustering se evaluó mediante el coeficiente Silhouette:
 
 ## 🖼️ 7. Q1: Clasificación de Estilo usando Embeddings de ResNet-18
 
-Para responder a la pregunta de clasificación del estilo artístico (Q1) utilizando deep learning, se entrenaron clasificadores supervisados sobre la muestra de 2,974 embeddings extraídos (split 80/20 train/test).
+Para responder a la pregunta de clasificación del estilo artístico (Q1) utilizando deep learning, se entrenaron clasificadores supervisados sobre la muestra de 10,000 embeddings extraídos (split 80/20 train/test).
 
 ### Comparación de Clasificación (Hito 1 vs. Hito 2)
 
@@ -143,28 +143,28 @@ Para responder a la pregunta de clasificación del estilo artístico (Q1) utiliz
 | :--- | :--- | :---: | :---: | :--- |
 | **Random Forest Baseline** | Features Geométricas (Tabulares) | **0.138** | 0.24 | Colapso a clases mayoritarias por falta de señal. |
 | **Random Forest Hito 1** | Features Visuales Manuales | **0.236** | — | Muestra de 3k. Features de color/bordes tradicionales. |
-| **Random Forest Hito 2** | Embeddings ResNet-18 (512-d) | **0.30** | 0.36 | Mejora significativa con descriptores profundos. |
-| **Regresión Logística Hito 2** | Embeddings ResNet-18 (512-d) | **0.35** | 0.35 | **Mejor modelo**. Excelente rendimiento sobre espacio de alta dimensión. |
+| **Random Forest Hito 2** | Embeddings ResNet-18 (512-d) | **0.330** | 0.40 | Reducción de varianza al escalar la muestra a 10k. |
+| **Regresión Logística Hito 2** | Embeddings ResNet-18 (512-d) | **0.430** | 0.45 | **Mejor modelo**. Excelente rendimiento al normalizar características con `StandardScaler`. |
 
 > [!TIP]
-> **Conclusión Clave:** Al pasar de características geométricas a descriptores profundos (ResNet-18), el F1-Score macro subió de **0.138 a 0.35 (+21.2%)** y superó por **+11.4%** al mejor clasificador del Hito 1 con características visuales manuales. Esto demuestra de forma cuantitativa el enorme poder de representación de las características semánticas profundas para discriminar estilos artísticos.
+> **Conclusión Clave:** Al pasar de características geométricas a descriptores profundos en una muestra de escala real (10,000 imágenes), el F1-Score macro subió de **0.138 a 0.430 (+29.2% absoluto)** y superó por **+19.4%** al mejor clasificador del Hito 1 con características visuales manuales. Esto demuestra de forma cuantitativa el enorme poder de representación de las características semánticas profundas para discriminar estilos artísticos.
 
 ---
 
 ## 📅 8. Q3: Regresión del Año de Creación usando Embeddings
 
-Se recuperó el análisis de regresión del año de creación de la obra (Q3), utilizando la columna `description` para extraer el año de creación (1,712 obras con año válido en la muestra de 2,974). Se entrenaron regresores sobre los embeddings de 512 dimensiones (split 80/20).
+Se recuperó el análisis de regresión del año de creación de la obra (Q3), utilizando la columna `description` para extraer el año de creación (5,844 obras con año válido en la muestra de 10,000). Se entrenaron regresores sobre los embeddings de 512 dimensiones (split 80/20).
 
 ### Comparación Cuantitativa de MAE (Error Absoluto Medio)
 
 | Regresor | Características de Entrada | MAE (Error Medio) | Reducción de Error |
 | :--- | :--- | :---: | :---: |
-| **Random Forest Baseline (Hito 1)** | Features Geométricas (Tabulares) | **81.4 años** | Baseline |
-| **Ridge Regressor (Hito 2)** | Embeddings ResNet-18 (512-d) | **74.22 años** | -7.18 años |
-| **Random Forest Regressor (Hito 2)** | Embeddings ResNet-18 (512-d) | **55.88 años** | **-25.52 años** |
+| **Random Forest Baseline (Hito 1)** | Features Geométricas (Tabulares) | **81.40 años** | Baseline |
+| **Ridge Regressor (Hito 2)** | Embeddings ResNet-18 (512-d) | **59.46 años** | -21.94 años |
+| **Random Forest Regressor (Hito 2)** | Embeddings ResNet-18 (512-d) | **53.57 años** | **-27.83 años** |
 
 > [!TIP]
-> **Conclusión Clave:** Utilizar embeddings visuales de aprendizaje profundo redujo el error absoluto medio (MAE) de predicción de año de **81.4 años a solo 55.88 años** (un recorte masivo de más de 25 años de error). Esto evidencia que la evolución temporal de los estilos artísticos (trazos, paletas de colores, composition histórica) queda codificada de forma cuantitativa en el espacio latente de la ResNet-18.
+> **Conclusión Clave:** Utilizar embeddings visuales de aprendizaje profundo en una muestra grande (10k) redujo el error absoluto medio (MAE) de predicción de año de **81.40 años a solo 53.57 años** (un recorte masivo de más de 27 años de error). Esto evidencia que la evolución temporal de los estilos artísticos (trazos, paletas de colores, composición histórica) queda codificada de forma cuantitativa en el espacio latente de la ResNet-18.
 
 ---
 
