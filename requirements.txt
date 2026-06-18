@@ -2,14 +2,13 @@ numpy
 pandas
 matplotlib
 seaborn
-scikit-learn
+scikit-learn # Para PCA, KMeans, t-SNE (Mejora 6) y similitud de coseno / Retrieval (Mejora 5)
 Pillow
 pypdf
 ipykernel
-imbalanced-learn
+imbalanced-learn # Para BalancedRandomForestClassifier (Técnica 3)
 tqdm
 scipy
-torch
-torchvision
-opencv-python
-
+torch # Para extracción de embeddings y Fine-Tuning End-to-End (Mejora 1 / Mejora 3)
+torchvision # Para modelo ResNet-18 y transformaciones de imágenes (Mejora 2)
+opencv-python # Para procesamiento de imágenes y mapas de calor en Grad-CAM
